@@ -27,14 +27,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateProductDto'
+              $ref: '#/components/schemas/ProductDto'
       responses:
         '200':
           description: Product created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProductDto'
+                $ref: '#/components/schemas/Product'
         '400':
           description: Invalid input
           content:
@@ -60,7 +60,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProductDto'
+                $ref: '#/components/schemas/Product'
         '404':
           description: Product not found
           content:
@@ -77,14 +77,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateProductDto'
+              $ref: '#/components/schemas/ProductDto'
       responses:
         '200':
           description: Product updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProductDto'
+                $ref: '#/components/schemas/Product'
         '404':
           description: Product not found
           content:
@@ -113,7 +113,7 @@ paths:
 
 components:
   schemas:
-    ProductDto:
+    Product:
       type: object
       properties:
         id:
@@ -141,32 +141,7 @@ components:
           minimum: 0
           description: Inventory count
 
-    CreateProductDto:
-      type: object
-      properties:
-        name:
-          type: string
-          maxLength: 100
-          description: Name of the product (must include cosmic terms (e.g., "star", "galaxy", "comet"))
-        description:
-          type: string
-          maxLength: 2000
-          description: Detailed description of the product
-        price:
-          type: number
-          format: double
-          minimum: 0.01
-          description: Product price
-        currency:
-          type: string
-          pattern: "^[A-Z]{3}$"
-          description: Currency code (e.g. USD)
-        stock:
-          type: integer
-          minimum: 0
-          description: Inventory count
-
-    UpdateProductDto:
+    ProductDto:
       type: object
       properties:
         name:
