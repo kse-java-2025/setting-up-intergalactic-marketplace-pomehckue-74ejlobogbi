@@ -1,5 +1,6 @@
 package com.cosmocats.marketplace.web.exception;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
@@ -19,6 +20,7 @@ import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.ProblemDetail.forStatusAndDetail;
 
 @ControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @Override
@@ -27,6 +29,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             org.springframework.http.HttpHeaders headers,
             HttpStatusCode status,
             WebRequest request) {
+
+        log.info("Input parameters validation failed");
 
         String objectName = ex.getBindingResult().getObjectName();
         String validationMessage = ex.getBindingResult()
@@ -50,6 +54,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(ProductNotFoundException.class)
     public ProblemDetail handleProductNotFoundException(ProductNotFoundException ex) {
+        log.info("Product Not Found exception raised");
+
         ProblemDetail problemDetail = forStatusAndDetail(NOT_FOUND, ex.getMessage());
         problemDetail.setType(create("product-not-found"));
         problemDetail.setTitle("Product Not Found");
@@ -58,6 +64,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleGenericException(Exception ex) {
+        log.info("Generic exception raised");
+
         ProblemDetail problemDetail = forStatusAndDetail(INTERNAL_SERVER_ERROR, ex.getMessage());
         problemDetail.setType(create("internal-server-error"));
         problemDetail.setTitle("Internal Server Error");
