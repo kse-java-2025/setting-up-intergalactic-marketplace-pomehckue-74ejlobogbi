@@ -1,99 +1,109 @@
 package com.cosmocats.marketplace.service.impl;
 
 import com.cosmocats.marketplace.domain.Product;
+import com.cosmocats.marketplace.repository.CategoryRepository;
+import com.cosmocats.marketplace.repository.ProductRepository;
+import com.cosmocats.marketplace.repository.entity.CategoryEntity;
+import com.cosmocats.marketplace.repository.entity.ProductEntity;
 import com.cosmocats.marketplace.service.ProductService;
+import com.cosmocats.marketplace.service.exception.CategoryNotFoundException;
+import com.cosmocats.marketplace.service.exception.PersistenceException;
 import com.cosmocats.marketplace.service.exception.ProductNotFoundException;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
 @Service
+@AllArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
-    private final List<Product> products = new ArrayList<>(buildAllProductsMock());
+    private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
+    private final ProductMapper productMapper;
 
     @Override
+    @Transactional(readOnly = true)
     public List<Product> getAllProducts() {
-        return products;
+        return productMapper.toProductList(productRepository.findAll());
     }
 
     @Override
-    public Product getProductById(UUID productId) {
-        return products.stream()
-                .filter(p -> p.getId().equals(productId))
-                .findFirst()
-                .orElseThrow(() -> {
-                    log.info("Product with id {} not found in mock", productId);
-                    return new ProductNotFoundException(productId);
-                });
+    @Transactional(readOnly = true)
+    public Product getProductById(Long productId) {
+        ProductEntity product = productRepository.findById(productId).orElseThrow(() -> {
+            log.info("Product with id {} not found", productId);
+            return new ProductNotFoundException(productId);
+        });
+
+        return productMapper.toProduct(product);
     }
 
     @Override
+    @Transactional
     public Product createProduct(ProductDto productDto) {
-        Product product = new Product();
-        product.setId(UUID.randomUUID());
-        product.setName(productDto.name);
-        product.setDescription(productDto.description);
-        product.setPrice(productDto.price);
-        product.setCurrency(productDto.currency);
-        product.setStock(productDto.stock);
-
-        products.add(product);
-        log.info("Product with id {} created", product.getId());
-
-        return product;
+        try {
+            Product product = productMapper.toProduct(productRepository.save(productMapper.toProductEntity(productDto)));
+            log.info("Product with id {} created", product.getId());
+            return product;
+        } catch (Exception ex) {
+            log.error("Exception occurred while saving product");
+            throw new PersistenceException(ex);
+        }
     }
 
     @Override
-    public Product updateProductById(UUID id, ProductDto productDto) {
-        Product existingProduct = getProductById(id);
+    @Transactional
+    public Product updateProductById(Long id, ProductDto productDto) {
+        try {
+            ProductEntity existingProduct = productRepository.findById(id).orElseThrow(() -> {
+                log.warn("Product with id {} not found", id);
+                return new ProductNotFoundException(id);
+            });
 
-        existingProduct.setName(productDto.name);
-        existingProduct.setDescription(productDto.description);
-        existingProduct.setPrice(productDto.price);
-        existingProduct.setCurrency(productDto.currency);
-        existingProduct.setStock(productDto.stock);
+            if (productDto.getCategoryId() != null) {
+                CategoryEntity category = categoryRepository.findById(productDto.getCategoryId()).orElseThrow(() -> {
+                    log.warn("Category with id {} not found", productDto.getCategoryId());
+                    return new CategoryNotFoundException(productDto.getCategoryId());
+                });
 
-        log.info("Product with id {} updated", id);
+                existingProduct.setCategory(category);
+            }
 
-        return existingProduct;
+            existingProduct.setName(productDto.getName());
+            existingProduct.setDescription(productDto.getDescription());
+            existingProduct.setPrice(productDto.getPrice());
+            existingProduct.setCurrency(productDto.getCurrency());
+            existingProduct.setStock(productDto.getStock());
+
+            ProductEntity saved = productRepository.save(existingProduct);
+
+            log.info("Product with id {} successfully updated", id);
+
+            return productMapper.toProduct(saved);
+        }
+        catch (Exception ex) {
+            log.error("Exception occurred while updating product");
+            throw new PersistenceException(ex);
+        }
     }
 
     @Override
-    public void deleteProductById(UUID id) {
-        products.removeIf(details -> details.getId().equals(id));
-        log.info("Product with id {} deleted", id);
-    }
-
-    private List<Product> buildAllProductsMock() {
-        return List.of(
-                Product.builder()
-                        .id(UUID.randomUUID())
-                        .name("Space yarn balls")
-                        .description("Anti-gravity yarn balls")
-                        .price(6)
-                        .currency("USD")
-                        .stock(7)
-                        .build(),
-                Product.builder()
-                        .id(UUID.randomUUID())
-                        .name("Cosmic milk")
-                        .description("Super tasty cosmic milk")
-                        .price(2)
-                        .currency("USD")
-                        .stock(12)
-                        .build(),
-                Product.builder()
-                        .id(UUID.randomUUID())
-                        .name("Comet cheese")
-                        .description("Cheese made of comets")
-                        .price(14)
-                        .currency("USD")
-                        .stock(2)
-                        .build());
+    @Transactional
+    public void deleteProductById(Long id) {
+        try {
+            productRepository.deleteById(id);
+            log.info("Product with id {} deleted", id);
+        } catch (Exception ex) {
+            log.error("Exception occurred while deleting product with id {}", id);
+            throw new PersistenceException(ex);
+        }
     }
 }

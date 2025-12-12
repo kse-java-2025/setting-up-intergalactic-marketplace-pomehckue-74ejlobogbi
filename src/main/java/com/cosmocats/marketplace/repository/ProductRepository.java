@@ -1,7 +1,10 @@
 package com.cosmocats.marketplace.repository;
 
-import com.cosmocats.marketplace.domain.Product;
-import org.springframework.data.jpa.repository.JpaRepository;
+import com.cosmocats.marketplace.repository.entity.ProductEntity;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
 
-public interface ProductRepository extends JpaRepository<Product, Long> {
+@Repository
+public interface ProductRepository extends CrudRepository<ProductEntity, Long> {
+
 }
