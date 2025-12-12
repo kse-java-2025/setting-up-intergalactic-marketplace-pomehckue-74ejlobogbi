@@ -1,99 +1,86 @@
 package com.cosmocats.marketplace.service.impl;
 
+import com.cosmocats.marketplace.client.SupplierClient;
 import com.cosmocats.marketplace.domain.Product;
+import com.cosmocats.marketplace.dto.ProductDto;
+import com.cosmocats.marketplace.mapper.ProductMapper;
+import com.cosmocats.marketplace.repository.ProductRepository;
 import com.cosmocats.marketplace.service.ProductService;
 import com.cosmocats.marketplace.service.exception.ProductNotFoundException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
-    private final List<Product> products = new ArrayList<>(buildAllProductsMock());
+    private final ProductRepository productRepository;
+    private final ProductMapper productMapper;
+    private final SupplierClient supplierClient;
 
     @Override
-    public List<Product> getAllProducts() {
-        return products;
+    public List<ProductDto> getAllProducts() {
+        log.info("Fetching all products from repository");
+        List<Product> products = productRepository.findAll();
+        return productMapper.toDtoList(products);
     }
 
     @Override
-    public Product getProductById(UUID productId) {
-        return products.stream()
-                .filter(p -> p.getId().equals(productId))
-                .findFirst()
+    public ProductDto getProductById(UUID productId) {
+        log.info("Fetching product with id: {}", productId);
+        Product product = productRepository.findById(productId)
                 .orElseThrow(() -> {
-                    log.info("Product with id {} not found in mock", productId);
+                    log.warn("Product with id {} not found", productId);
                     return new ProductNotFoundException(productId);
                 });
+        return productMapper.toDto(product);
     }
 
     @Override
-    public Product createProduct(ProductDto productDto) {
-        Product product = new Product();
-        product.setId(UUID.randomUUID());
-        product.setName(productDto.name);
-        product.setDescription(productDto.description);
-        product.setPrice(productDto.price);
-        product.setCurrency(productDto.currency);
-        product.setStock(productDto.stock);
+    public ProductDto createProduct(ProductDto productDto) {
+        log.info("Creating new product: {}", productDto.getName());
 
-        products.add(product);
-        log.info("Product with id {} created", product.getId());
+        if (!supplierClient.validatePrice(productDto.getName(), productDto.getPrice())) {
+            log.warn("Price {} is below minimum for product {}",
+                    productDto.getPrice(), productDto.getName());
+        }
 
-        return product;
+        Product product = productMapper.toEntity(productDto);
+        Product savedProduct = productRepository.save(product);
+
+        return productMapper.toDto(savedProduct);
     }
 
     @Override
-    public Product updateProductById(UUID id, ProductDto productDto) {
-        Product existingProduct = getProductById(id);
+    public ProductDto updateProductById(UUID id, ProductDto productDto) {
+        log.info("Updating product with id: {}", id);
 
-        existingProduct.setName(productDto.name);
-        existingProduct.setDescription(productDto.description);
-        existingProduct.setPrice(productDto.price);
-        existingProduct.setCurrency(productDto.currency);
-        existingProduct.setStock(productDto.stock);
+        Product existingProduct = productRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.warn("Product with id {} not found for update", id);
+                    return new ProductNotFoundException(id);
+                });
 
-        log.info("Product with id {} updated", id);
+        productMapper.updateEntityFromDto(productDto, existingProduct);
+        Product updatedProduct = productRepository.save(existingProduct);
 
-        return existingProduct;
+        return productMapper.toDto(updatedProduct);
     }
 
     @Override
     public void deleteProductById(UUID id) {
-        products.removeIf(details -> details.getId().equals(id));
-        log.info("Product with id {} deleted", id);
-    }
+        log.info("Deleting product with id: {}", id);
 
-    private List<Product> buildAllProductsMock() {
-        return List.of(
-                Product.builder()
-                        .id(UUID.randomUUID())
-                        .name("Space yarn balls")
-                        .description("Anti-gravity yarn balls")
-                        .price(6)
-                        .currency("USD")
-                        .stock(7)
-                        .build(),
-                Product.builder()
-                        .id(UUID.randomUUID())
-                        .name("Cosmic milk")
-                        .description("Super tasty cosmic milk")
-                        .price(2)
-                        .currency("USD")
-                        .stock(12)
-                        .build(),
-                Product.builder()
-                        .id(UUID.randomUUID())
-                        .name("Comet cheese")
-                        .description("Cheese made of comets")
-                        .price(14)
-                        .currency("USD")
-                        .stock(2)
-                        .build());
+        if (!productRepository.existsById(id)) {
+            log.warn("Product with id {} not found for deletion", id);
+            throw new ProductNotFoundException(id);
+        }
+
+        productRepository.deleteById(id);
     }
 }
