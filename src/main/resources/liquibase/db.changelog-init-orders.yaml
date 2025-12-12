@@ -1,0 +1,45 @@
+databaseChangeLog:
+  - changeSet:
+      id: lab-3-3
+      author: dgavrylovskyi
+      changes:
+        - createSequence:
+            sequenceName: order_id_seq
+            incrementBy: 50
+
+        - createTable:
+            tableName: orders
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: cart_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_price
+                  type: DECIMAL(10,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: payment_reference
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+
+        - addUniqueConstraint:
+            tableName: orders
+            columnNames: cart_id
+            constraintName: uq_cart_id
+
+        - createIndex:
+            tableName: orders
+            indexName: idx_orders_cart_id
+            columns:
+              - column:
+                  name: cart_id
