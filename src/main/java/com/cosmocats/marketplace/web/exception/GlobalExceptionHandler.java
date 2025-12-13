@@ -55,17 +55,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(ProductNotFoundException.class)
     public ProblemDetail handleProductNotFoundException(ProductNotFoundException ex) {
-        log.info("Product Not Found exception raised");
+        log.info("Product Not Found exception raised: {}", ex.getMessage());
 
         ProblemDetail problemDetail = forStatusAndDetail(NOT_FOUND, ex.getMessage());
         problemDetail.setType(create("product-not-found"));
         problemDetail.setTitle("Product Not Found");
+        
         return problemDetail;
     }
 
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleGenericException(Exception ex) {
-        log.info("Generic exception raised");
+        log.error("Generic exception raised", ex);
 
         ProblemDetail problemDetail = forStatusAndDetail(INTERNAL_SERVER_ERROR, ex.getMessage());
         problemDetail.setType(create("internal-server-error"));
