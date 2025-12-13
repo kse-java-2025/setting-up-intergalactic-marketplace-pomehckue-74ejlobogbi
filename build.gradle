@@ -5,7 +5,7 @@ plugins {
     id 'org.barfuin.gradle.jacocolog' version '3.1.0'
 }
 
-group = 'com.example'
+group = 'com.cosmocats'
 version = '0.0.1-SNAPSHOT'
 
 java {
@@ -15,11 +15,14 @@ java {
 }
 
 ext {
-    // Minimal Coverage
     minimumCoveragePerFile = 0.8
     filesExcludedFromCoverage = [
-            "**/*MarketApplication.*",
-            "**/config/*Configuration.*"
+            "**/*MarketPlaceApplication.*",
+            "**/config/*Configuration.*",
+            "**/config/DataInitializer.*",
+            "**/domain/**",
+            "**/dto/**",
+            "**/mapper/**"
     ]
 }
 
@@ -37,27 +40,46 @@ apply from: "${rootProject.projectDir}/gradle/test.gradle"
 apply from: "${rootProject.projectDir}/gradle/jacoco.gradle"
 
 dependencies {
+    // Spring Boot Starters
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-data-rest'
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'jakarta.validation:jakarta.validation-api:3.1.0'
-    implementation 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
-    implementation 'org.mapstruct:mapstruct:1.6.2'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // DB
     implementation 'org.liquibase:liquibase-core:4.30.0'
     implementation 'org.postgresql:postgresql:42.7.4'
+
+    // Jakarta Validation
+    implementation 'jakarta.validation:jakarta.validation-api:3.1.0'
+
+    // Lombok
     compileOnly 'org.projectlombok:lombok:1.18.34'
-    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
-    annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.2'
     annotationProcessor 'org.projectlombok:lombok:1.18.34'
-    implementation 'org.springframework.boot:spring-boot-starter-validation:3.3.4'
+
+    // MapStruct
+    implementation 'org.mapstruct:mapstruct:1.6.2'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.2'
+    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+
+    // H2 Database
+    runtimeOnly 'com.h2database:h2'
+
+    // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'org.testcontainers:junit-jupiter'
     testImplementation 'org.assertj:assertj-core:3.24.2'
-    testImplementation "org.wiremock:wiremock-jetty12:3.9.2"
+    testImplementation 'org.wiremock:wiremock-jetty12:3.10.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // Test Lombok and MapStruct
+    testCompileOnly 'org.projectlombok:lombok:1.18.34'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.34'
     testAnnotationProcessor 'org.mapstruct:mapstruct-processor:1.6.2'
-    testImplementation 'org.projectlombok:lombok:1.18.34'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
 }

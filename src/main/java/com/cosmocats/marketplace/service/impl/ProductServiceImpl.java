@@ -1,38 +1,36 @@
 package com.cosmocats.marketplace.service.impl;
 
+import com.cosmocats.marketplace.client.SupplierClient;
 import com.cosmocats.marketplace.domain.Product;
-import com.cosmocats.marketplace.repository.CategoryRepository;
+import com.cosmocats.marketplace.dto.ProductDto;
+import com.cosmocats.marketplace.mapper.ProductMapper;
 import com.cosmocats.marketplace.repository.ProductRepository;
-import com.cosmocats.marketplace.repository.entity.CategoryEntity;
 import com.cosmocats.marketplace.repository.entity.ProductEntity;
 import com.cosmocats.marketplace.service.ProductService;
-import com.cosmocats.marketplace.service.exception.CategoryNotFoundException;
 import com.cosmocats.marketplace.service.exception.PersistenceException;
 import com.cosmocats.marketplace.service.exception.ProductNotFoundException;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 @Slf4j
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
-    private final CategoryRepository categoryRepository;
+    private final SupplierClient supplierClient;
     private final ProductMapper productMapper;
 
     @Override
     @Transactional(readOnly = true)
     public List<Product> getAllProducts() {
-        return productMapper.toProductList(productRepository.findAll());
+        log.info("Fetching all products from repository");
+        List<ProductEntity> products = productRepository.findAll();
+        return productMapper.toDomainList(products);
     }
 
     @Override
@@ -43,14 +41,21 @@ public class ProductServiceImpl implements ProductService {
             return new ProductNotFoundException(productId);
         });
 
-        return productMapper.toProduct(product);
+        return productMapper.toDomain(product);
     }
 
     @Override
     @Transactional
     public Product createProduct(ProductDto productDto) {
+        log.info("Creating new product: {}", productDto.getName());
+
+        if (!supplierClient.validatePrice(productDto.getName(), productDto.getPrice())) {
+            log.warn("Price {} is below minimum for product {}",
+                    productDto.getPrice(), productDto.getName());
+        }
+
         try {
-            Product product = productMapper.toProduct(productRepository.save(productMapper.toProductEntity(productDto)));
+            Product product = productMapper.toDomain(productRepository.save(productMapper.toEntity(productDto)));
             log.info("Product with id {} created", product.getId());
             return product;
         } catch (Exception ex) {
@@ -62,32 +67,19 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public Product updateProductById(Long id, ProductDto productDto) {
+        log.info("Updating product with id: {}", id);
+
         try {
             ProductEntity existingProduct = productRepository.findById(id).orElseThrow(() -> {
                 log.warn("Product with id {} not found", id);
                 return new ProductNotFoundException(id);
             });
 
-            if (productDto.getCategoryId() != null) {
-                CategoryEntity category = categoryRepository.findById(productDto.getCategoryId()).orElseThrow(() -> {
-                    log.warn("Category with id {} not found", productDto.getCategoryId());
-                    return new CategoryNotFoundException(productDto.getCategoryId());
-                });
-
-                existingProduct.setCategory(category);
-            }
-
-            existingProduct.setName(productDto.getName());
-            existingProduct.setDescription(productDto.getDescription());
-            existingProduct.setPrice(productDto.getPrice());
-            existingProduct.setCurrency(productDto.getCurrency());
-            existingProduct.setStock(productDto.getStock());
-
-            ProductEntity saved = productRepository.save(existingProduct);
+            productMapper.updateEntityFromDto(productDto, existingProduct);
+            ProductEntity updatedProduct = productRepository.save(existingProduct);
 
             log.info("Product with id {} successfully updated", id);
-
-            return productMapper.toProduct(saved);
+            return productMapper.toDomain(updatedProduct);
         }
         catch (Exception ex) {
             log.error("Exception occurred while updating product");
@@ -98,6 +90,13 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public void deleteProductById(Long id) {
+        log.info("Deleting product with id: {}", id);
+
+        if (!productRepository.existsById(id)) {
+            log.warn("Product with id {} not found for deletion", id);
+            throw new ProductNotFoundException(id);
+        }
+
         try {
             productRepository.deleteById(id);
             log.info("Product with id {} deleted", id);

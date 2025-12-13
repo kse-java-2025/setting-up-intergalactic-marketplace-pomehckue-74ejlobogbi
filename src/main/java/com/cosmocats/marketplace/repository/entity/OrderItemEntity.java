@@ -20,12 +20,12 @@ import static jakarta.persistence.CascadeType.PERSIST;
 @Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "order_entry")
-public class OrderEntryEntity {
+@Table(name = "order_item")
+public class OrderItemEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "order_entry_id_seq")
-    @SequenceGenerator(name = "order_entry_id_seq", sequenceName = "order_entry_id_seq")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "order_item_id_seq")
+    @SequenceGenerator(name = "order_item_id_seq", sequenceName = "order_item_id_seq")
     Long id;
 
     Integer quantity;

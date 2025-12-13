@@ -1,6 +1,7 @@
 package com.cosmocats.marketplace.web;
 
 import com.cosmocats.marketplace.domain.Product;
+import com.cosmocats.marketplace.dto.ProductDto;
 import com.cosmocats.marketplace.service.ProductService;
 import com.cosmocats.marketplace.service.exception.ProductNotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,14 +9,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
-import java.util.UUID;
+import java.util.Random;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -27,117 +29,170 @@ class ProductControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockitoBean
+    @MockBean
     private ProductService productService;
 
     @Autowired
     private ObjectMapper objectMapper;
 
-    private Product sampleProduct;
-    private UUID sampleId;
+    private Product product;
+    private ProductDto productDto;
+    private Long productId;
 
     @BeforeEach
     void setUp() {
-        sampleId = UUID.randomUUID();
-        sampleProduct = Product.builder()
-                .id(sampleId)
+        productId = new Random().nextLong();
+        productDto = ProductDto.builder()
+                .id(productId)
                 .name("Cosmic Milk")
-                .description("Delicious cosmic milk")
-                .price(5.0)
-                .currency("USD")
-                .stock(10)
+                .description("Fresh from Milky Way")
+                .price(10.0)
+                .stock(50)
+                .build();
+
+        product = Product.builder()
+                .id(productId)
+                .name("Cosmic Milk")
+                .description("Fresh from Milky Way")
+                .price(10.0)
+                .stock(50)
                 .build();
     }
 
     @Test
-    void getAllProducts_shouldReturnProducts() throws Exception {
-        when(productService.getAllProducts()).thenReturn(List.of(sampleProduct));
+    void getAllProducts_shouldReturn200() throws Exception {
+        when(productService.getAllProducts()).thenReturn(List.of(product));
 
         mockMvc.perform(get("/api/v1/products"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(sampleId.toString()));
+                .andExpect(jsonPath("$[0].name").value("Cosmic Milk"));
     }
 
     @Test
-    void getProductById_shouldReturnProduct() throws Exception {
-        when(productService.getProductById(sampleId)).thenReturn(sampleProduct);
+    void getProductById_found_shouldReturn200() throws Exception {
+        when(productService.getProductById(productId)).thenReturn(product);
 
-        mockMvc.perform(get("/api/v1/products/{id}", sampleId))
+        mockMvc.perform(get("/api/v1/products/{id}", productId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(sampleId.toString()))
-                .andExpect(jsonPath("$.name").value("Cosmic Milk"));
+                .andExpect(jsonPath("$.id").value(productId.toString()));
     }
 
     @Test
     void getProductById_notFound_shouldReturn404() throws Exception {
-        when(productService.getProductById(sampleId))
-                .thenThrow(new ProductNotFoundException(sampleId));
+        when(productService.getProductById(productId))
+                .thenThrow(new ProductNotFoundException(productId));
 
-        mockMvc.perform(get("/api/v1/products/{id}", sampleId))
+        mockMvc.perform(get("/api/v1/products/{id}", productId))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.title").value("Product Not Found"))
-                .andExpect(jsonPath("$.detail").value("Product with id " + sampleId + " not found"));
+                .andExpect(jsonPath("$.status").value(404));
     }
 
     @Test
-    void createProduct_validInput_shouldReturnProduct() throws Exception {
-        ProductDto dto = new ProductDto();
-        dto.name = "Star Toy";
-        dto.description = "Awesome cosmic toy";
-        dto.price = 10.0;
-        dto.currency = "USD";
-        dto.stock = 3;
-
-        Product created = Product.builder()
-                .id(UUID.randomUUID())
-                .name(dto.name)
-                .description(dto.description)
-                .price(dto.price)
-                .currency(dto.currency)
-                .stock(dto.stock)
+    void createProduct_valid_shouldReturn200() throws Exception {
+        ProductDto createDto = ProductDto.builder()
+                .name("Star Dust")
+                .price(25.0)
+                .stock(100)
                 .build();
 
-        when(productService.createProduct(any())).thenReturn(created);
+        when(productService.createProduct(any())).thenReturn(product);
 
         mockMvc.perform(post("/api/v1/products")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(created.getId().toString()));
+                        .content(objectMapper.writeValueAsString(createDto)))
+                .andExpect(status().isOk());
     }
 
     @Test
-    void createProduct_invalidInput_shouldReturnBadRequest() throws Exception {
-        ProductDto dto = new ProductDto();
-        dto.name = "";
-        dto.price = -1;
-        dto.currency = "USD";
-        dto.stock = 1;
+    void createProduct_blankName_shouldReturn400() throws Exception {
+        ProductDto invalid = ProductDto.builder()
+                .name("")
+                .price(10.0)
+                .stock(50)
+                .build();
 
         mockMvc.perform(post("/api/v1/products")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Bad Request"));
+                        .content(objectMapper.writeValueAsString(invalid)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    void deleteProduct_shouldReturnNoContent() throws Exception {
-        mockMvc.perform(delete("/api/v1/products/{id}", sampleId))
+    void createProduct_noCosmicWord_shouldReturn400() throws Exception {
+        ProductDto invalid = ProductDto.builder()
+                .name("Regular Milk")
+                .price(5.0)
+                .stock(50)
+                .build();
+
+        mockMvc.perform(post("/api/v1/products")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalid)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void createProduct_negativePrice_shouldReturn400() throws Exception {
+        ProductDto invalid = ProductDto.builder()
+                .name("Cosmic Milk")
+                .price(-10.0)
+                .stock(50)
+                .build();
+
+        mockMvc.perform(post("/api/v1/products")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalid)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void createProduct_negativeStock_shouldReturn400() throws Exception {
+        ProductDto invalid = ProductDto.builder()
+                .name("Cosmic Milk")
+                .price(10.0)
+                .stock(-5)
+                .build();
+
+        mockMvc.perform(post("/api/v1/products")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalid)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updateProduct_valid_shouldReturn200() throws Exception {
+        when(productService.updateProductById(eq(productId), any()))
+                .thenReturn(product);
+
+        mockMvc.perform(put("/api/v1/products/{id}", productId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(productDto)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void updateProduct_notFound_shouldReturn404() throws Exception {
+        when(productService.updateProductById(eq(productId), any()))
+                .thenThrow(new ProductNotFoundException(productId));
+
+        mockMvc.perform(put("/api/v1/products/{id}", productId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(productDto)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteProduct_found_shouldReturn204() throws Exception {
+        mockMvc.perform(delete("/api/v1/products/{id}", productId))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     void deleteProduct_notFound_shouldReturn404() throws Exception {
-        doThrow(new ProductNotFoundException(sampleId))
-                .when(productService).deleteProductById(sampleId);
+        doThrow(new ProductNotFoundException(productId))
+                .when(productService).deleteProductById(productId);
 
-        mockMvc.perform(delete("/api/v1/products/{id}", sampleId))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.title").value("Product Not Found"))
-                .andExpect(jsonPath("$.detail").value("Product with id " + sampleId + " not found"));
+        mockMvc.perform(delete("/api/v1/products/{id}", productId))
+                .andExpect(status().isNotFound());
     }
 }

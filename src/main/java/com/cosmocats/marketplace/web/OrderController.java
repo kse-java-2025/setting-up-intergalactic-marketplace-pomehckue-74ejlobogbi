@@ -1,7 +1,10 @@
 package com.cosmocats.marketplace.web;
 
+import com.cosmocats.marketplace.dto.OrderDto;
+import com.cosmocats.marketplace.mapper.OrderMapper;
 import com.cosmocats.marketplace.service.OrderService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -10,30 +13,26 @@ import java.util.List;
 
 @RestController
 @Validated
+@RequiredArgsConstructor
 @RequestMapping("/api/v1/orders")
 public class OrderController {
 
     private final OrderService orderService;
     private final OrderMapper orderMapper;
 
-    public OrderController(OrderService orderService, OrderMapper orderMapper) {
-        this.orderService = orderService;
-        this.orderMapper = orderMapper;
-    }
-
     @GetMapping
     public ResponseEntity<List<OrderDto>> getAllOrders() {
-        return ResponseEntity.ok(orderMapper.toOrderListDto(orderService.getAllOrders()));
+        return ResponseEntity.ok(orderMapper.toDtoList(orderService.getAllOrders()));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<OrderDto> getOrderById(@PathVariable String id) {
-        return ResponseEntity.ok(orderMapper.toOrderDto(orderService.getOrderById(id)));
+        return ResponseEntity.ok(orderMapper.toDto(orderService.getOrderById(id)));
     }
 
     @PostMapping
     public ResponseEntity<OrderDto> createOrder(@RequestBody @Valid OrderDto orderDto){
-        return ResponseEntity.ok(orderMapper.toOrderDto(orderService.createOrder(orderDto)));
+        return ResponseEntity.ok(orderMapper.toDto(orderService.createOrder(orderDto)));
     }
 
     @DeleteMapping("/{id}")

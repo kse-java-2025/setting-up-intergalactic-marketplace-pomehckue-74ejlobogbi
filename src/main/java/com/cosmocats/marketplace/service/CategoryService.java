@@ -1,5 +1,10 @@
 package com.cosmocats.marketplace.service;
 
+import com.cosmocats.marketplace.domain.Category;
+import com.cosmocats.marketplace.dto.CategoryDto;
+
+import java.util.List;
+
 public interface CategoryService {
 
     List<Category> getAllCategories();

@@ -4,11 +4,11 @@ databaseChangeLog:
       author: dgavrylovskyi
       changes:
         - createSequence:
-            sequenceName: order_entry_id_seq
+            sequenceName: order_item_id_seq
             incrementBy: 50
 
         - createTable:
-            tableName: order_entry
+            tableName: order_item
             columns:
               - column:
                   name: id
@@ -38,15 +38,15 @@ databaseChangeLog:
                     nullable: false
 
         - addForeignKeyConstraint:
-            baseTableName: order_entry
+            baseTableName: order_item
             baseColumnNames: product_id
             referencedTableName: product
             referencedColumnNames: id
-            constraintName: fk_order_entry_product
+            constraintName: fk_order_item_product
 
         - addForeignKeyConstraint:
-            baseTableName: order_entry
+            baseTableName: order_item
             baseColumnNames: order_id
             referencedTableName: orders
             referencedColumnNames: id
-            constraintName: fk_order_entry_order
+            constraintName: fk_order_item_order

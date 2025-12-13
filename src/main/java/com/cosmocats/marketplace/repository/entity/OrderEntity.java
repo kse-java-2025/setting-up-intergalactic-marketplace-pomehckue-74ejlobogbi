@@ -35,5 +35,5 @@ public class OrderEntity {
     String paymentReference;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.PERSIST, orphanRemoval = true)
-    List<OrderEntryEntity> entries;
+    List<OrderItemEntity> entries;
 }

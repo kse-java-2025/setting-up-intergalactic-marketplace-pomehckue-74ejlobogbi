@@ -4,7 +4,6 @@ import com.cosmocats.marketplace.domain.Product;
 import com.cosmocats.marketplace.dto.ProductDto;
 
 import java.util.List;
-import java.util.UUID;
 
 public interface ProductService {
 
