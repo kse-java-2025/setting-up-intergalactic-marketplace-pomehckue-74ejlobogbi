@@ -8,6 +8,7 @@ paths:
   /api/v1/products:
     get:
       summary: Get all products
+      description: Retrieves a list of all available products in the marketplace
       tags:
         - Products
       responses:
@@ -16,13 +17,17 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProductListDto'
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductDto'
+
     post:
       summary: Create a new product
+      description: Creates a new product in the marketplace
       tags:
         - Products
       requestBody:
-        description: Product payload to create
+        description: Product data to create
         required: true
         content:
           application/json:
@@ -30,13 +35,13 @@ paths:
               $ref: '#/components/schemas/ProductDto'
       responses:
         '200':
-          description: Product created
+          description: Product successfully created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Product'
+                $ref: '#/components/schemas/ProductDto'
         '400':
-          description: Invalid input
+          description: Invalid input - validation error
           content:
             application/json:
               schema:
@@ -47,32 +52,37 @@ paths:
       - in: path
         name: id
         required: true
+        description: UUID of the product
         schema:
-          type: integer
-        description: ID of the product to retrieve
+          type: string
+          format: uuid
+
     get:
       summary: Get product by ID
+      description: Retrieves a single product by its unique identifier
       tags:
         - Products
       responses:
         '200':
-          description: Product found
+          description: Product found and returned
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Product'
+                $ref: '#/components/schemas/ProductDto'
         '404':
           description: Product not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
     put:
-      summary: Update product by id
+      summary: Update product by ID
+      description: Updates an existing product with new data
       tags:
         - Products
       requestBody:
-        description: Product payload to update
+        description: Updated product data
         required: true
         content:
           application/json:
@@ -80,30 +90,32 @@ paths:
               $ref: '#/components/schemas/ProductDto'
       responses:
         '200':
-          description: Product updated
+          description: Product successfully updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Product'
+                $ref: '#/components/schemas/ProductDto'
+        '400':
+          description: Invalid input - validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
         '404':
           description: Product not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '400':
-          description: Invalid input
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationError'
+
     delete:
-      summary: Delete product by id
+      summary: Delete product by ID
+      description: Deletes a product from the marketplace
       tags:
         - Products
       responses:
         '204':
-          description: Product deleted
+          description: Product successfully deleted
         '404':
           description: Product not found
           content:
@@ -113,37 +125,18 @@ paths:
 
 components:
   schemas:
-    Product:
-      type: object
-      properties:
-        id:
-          type: integer
-          description: Unique identifier of the product
-        name:
-          type: string
-          maxLength: 100
-          description: Name of the product (must include cosmic terms (e.g., "star", "galaxy", "comet"))
-        description:
-          type: string
-          maxLength: 2000
-          description: Detailed description of the product
-        price:
-          type: number
-          format: double
-          minimum: 0.01
-          description: Product price
-        currency:
-          type: string
-          pattern: "^[A-Z]{3}$"
-          description: Currency code (e.g. USD)
-        stock:
-          type: integer
-          minimum: 0
-          description: Inventory count
-
     ProductDto:
       type: object
+      required:
+        - name
+        - price
+        - stock
       properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier of the product (auto-generated)
+          readOnly: true
         name:
           type: string
           maxLength: 100
@@ -156,57 +149,51 @@ components:
           type: number
           format: double
           minimum: 0.01
-          description: Product price
-        currency:
-          type: string
-          pattern: "^[A-Z]{3}$"
-          description: Currency code (e.g. USD)
+          description: Product price (must be at least 0.01)
         stock:
           type: integer
           minimum: 0
-          description: Inventory count
-
-    ProductListDto:
-      type: object
-      properties:
-        products:
-          type: array
-          items:
-            $ref: '#/components/schemas/ProductDto'
+          description: Available inventory count (cannot be negative)
+        categoryId:
+          type: string
+          format: uuid
+          description: UUID of the category this product belongs to
+          nullable: true
 
     ValidationError:
       type: object
       properties:
         status:
+          type: integer
+          description: HTTP status code
+        error:
           type: string
-          example: "400"
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ParamsViolationDetails'
+          description: Error type
+          example: "Bad Request"
+        message:
+          type: string
+          description: Detailed validation error message
+        path:
+          type: string
+          description: Request path where error occurred
+          example: "/api/v1/products"
 
     ErrorResponse:
       type: object
+      description: Problem Details for HTTP APIs
       properties:
         type:
           type: string
+          format: uri
           description: URI reference identifying the error type
+          example: "product-not-found"
         title:
           type: string
           description: A short description of the error
+          example: "Product Not Found"
         status:
           type: integer
           description: HTTP status code
         detail:
           type: string
           description: Detailed description of the error
-
-    ParamsViolationDetails:
-      type: object
-      properties:
-        fieldName:
-          type: string
-          description: Field where validation error occurred
-        reason:
-          type: string
-          description: Reason for the validation error

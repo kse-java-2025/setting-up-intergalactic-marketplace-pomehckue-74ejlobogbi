@@ -1,0 +1,16 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPathPattern": "/api/validate-price"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "valid": true,
+      "message": "Price validation passed"
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

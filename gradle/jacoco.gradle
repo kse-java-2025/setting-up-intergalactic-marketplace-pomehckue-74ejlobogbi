@@ -29,7 +29,7 @@ jacocoTestCoverageVerification {
 jacocoTestReport {
     group = "Reporting"
     description = "Creates the result report of the Unit Test"
-    getExecutionData().setFrom(fileTree(layout.buildDirectory).include("/jacoco/*.exec"))
+    executionData.setFrom(fileTree(layout.buildDirectory).include("/jacoco/*.exec"))
     reports {
         csv.required = true
         xml.required = false
@@ -50,7 +50,7 @@ tasks.register('jacocoIntegrationTestReport', JacocoReport) {
     dependsOn integrationTest
     group = "Reporting"
     description = "Creates the result report of the (Thin) Integration Test"
-    getExecutionData().setFrom(fileTree(layout.buildDirectory).include("/jacoco/integrationTest.exec"))
+    executionData.setFrom(fileTree(layout.buildDirectory).include("/jacoco/integrationTest.exec"))
     classDirectories.setFrom(tasks.jacocoTestReport.classDirectories)
     reports {
         csv.required = true
