@@ -2,6 +2,8 @@ package com.cosmocats.marketplace.web;
 
 import com.cosmocats.marketplace.domain.Product;
 import com.cosmocats.marketplace.dto.ProductDto;
+import com.cosmocats.marketplace.mapper.ProductMapper; // Import Mapper
+import com.cosmocats.marketplace.repository.entity.ProductEntity;
 import com.cosmocats.marketplace.service.ProductService;
 import com.cosmocats.marketplace.service.exception.ProductNotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,8 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.Random;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*; // Import anyList
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -32,21 +33,27 @@ class ProductControllerTest {
     @MockBean
     private ProductService productService;
 
+    @MockBean
+    private ProductMapper productMapper;
+
     @Autowired
     private ObjectMapper objectMapper;
 
     private Product product;
     private ProductDto productDto;
+    private ProductEntity productEntity;
     private Long productId;
 
     @BeforeEach
     void setUp() {
         productId = new Random().nextLong();
+
         productDto = ProductDto.builder()
                 .id(productId)
                 .name("Cosmic Milk")
                 .description("Fresh from Milky Way")
                 .price(10.0)
+                .currency("USD")
                 .stock(50)
                 .build();
 
@@ -55,8 +62,22 @@ class ProductControllerTest {
                 .name("Cosmic Milk")
                 .description("Fresh from Milky Way")
                 .price(10.0)
+                .currency("USD")
                 .stock(50)
                 .build();
+
+        productEntity = ProductEntity.builder()
+                .id(productId)
+                .name("Cosmic Milk")
+                .description("Fresh from Milky Way")
+                .price(10.0)
+                .currency("USD")
+                .stock(50)
+                .build();
+
+        when(productMapper.toDto(any(Product.class))).thenReturn(productDto);
+        when(productMapper.toEntity(any(ProductDto.class))).thenReturn(productEntity);
+        when(productMapper.toDtoList(anyList())).thenReturn(List.of(productDto));
     }
 
     @Test
@@ -89,17 +110,12 @@ class ProductControllerTest {
 
     @Test
     void createProduct_valid_shouldReturn200() throws Exception {
-        ProductDto createDto = ProductDto.builder()
-                .name("Star Dust")
-                .price(25.0)
-                .stock(100)
-                .build();
-
+        when(productMapper.toEntity(any(ProductDto.class))).thenReturn(productEntity);
         when(productService.createProduct(any())).thenReturn(product);
 
         mockMvc.perform(post("/api/v1/products")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createDto)))
+                        .content(objectMapper.writeValueAsString(productDto)))
                 .andExpect(status().isOk());
     }
 

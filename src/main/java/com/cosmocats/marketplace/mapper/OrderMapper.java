@@ -18,24 +18,16 @@ public interface OrderMapper {
     @Mapping(source = "status", target = "status")
     OrderDto toDto(Order entity);
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "orderItems", ignore = true)
+    @Mapping(source = "entries", target = "orderItems")
     Order toDomain(OrderEntity entity);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "entries", ignore = true)
     OrderEntity toEntity(OrderDto dto);
 
     List<OrderDto> toDtoList(List<Order> domains);
 
     List<Order> toDomainList(List<OrderEntity> entities);
-
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "orderItems", ignore = true)
-    void updateEntityFromDto(OrderDto dto, @MappingTarget Order entity);
 
     default String mapOrderStatus(Order.OrderStatus status) {
         return status != null ? status.name() : null;

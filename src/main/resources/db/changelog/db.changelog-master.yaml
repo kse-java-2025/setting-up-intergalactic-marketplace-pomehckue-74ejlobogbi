@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - include:
+        relativeToChangelogFile: true
+        file: db.changelog-init-categories.yaml
+  - include:
+      relativeToChangelogFile: true
+      file: db.changelog-init-products.yaml
+  - include:
+      relativeToChangelogFile: true
+      file: db.changelog-init-orders.yaml
+  - include:
+      relativeToChangelogFile: true
+      file: db.changelog-init-orders-item.yaml

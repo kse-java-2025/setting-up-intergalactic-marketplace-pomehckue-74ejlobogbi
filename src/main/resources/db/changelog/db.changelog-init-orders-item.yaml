@@ -22,7 +22,7 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
-                  name: price
+                  name: priceAtPurchase
                   type: DECIMAL(10,2)
                   constraints:
                     nullable: false

@@ -26,13 +26,4 @@ public interface CartItemMapper {
     CartItem toEntity(CartItemDto dto);
 
     List<CartItemDto> toDtoList(List<CartItem> entities);
-
-    default Product mapProductId(Long productId) {
-        if (productId == null) {
-            return null;
-        }
-        Product product = new Product();
-        product.setId(productId);
-        return product;
-    }
 }

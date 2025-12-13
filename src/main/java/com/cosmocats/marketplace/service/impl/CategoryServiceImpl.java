@@ -1,5 +1,6 @@
 package com.cosmocats.marketplace.service.impl;
 
+import com.cosmocats.marketplace.domain.Category;
 import com.cosmocats.marketplace.dto.CategoryDto;
 import com.cosmocats.marketplace.mapper.CategoryMapper;
 import com.cosmocats.marketplace.repository.CategoryRepository;
@@ -7,7 +8,6 @@ import com.cosmocats.marketplace.repository.entity.CategoryEntity;
 import com.cosmocats.marketplace.service.CategoryService;
 import com.cosmocats.marketplace.service.exception.CategoryNotFoundException;
 import com.cosmocats.marketplace.service.exception.PersistenceException;
-import com.cosmocats.marketplace.domain.Category;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -44,6 +44,8 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public Category createCategory(CategoryDto categoryDto) {
+        log.info("Creating new category: {}", categoryDto.getName());
+
         try {
             CategoryEntity entity = categoryMapper.toEntity(categoryDto);
             entity.setCategoryReference(UUID.randomUUID());
@@ -59,7 +61,31 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    public Category updateCategory(Long id, CategoryDto categoryDto) {
+        log.info("Updating category with id: {}", id);
+
+        CategoryEntity existingCategory = categoryRepository.findById(id)
+                .orElseThrow(() -> new CategoryNotFoundException(id));
+
+        try {
+            categoryMapper.updateEntityFromDto(categoryDto, existingCategory);
+            CategoryEntity saved = categoryRepository.save(existingCategory);
+            return categoryMapper.toDomain(saved);
+        } catch (Exception ex) {
+            log.error("Exception occurred while updating category");
+            throw new PersistenceException(ex);
+        }
+    }
+
+    @Override
+    @Transactional
     public void deleteCategoryById(Long id) {
+        log.info("Deleting category with id: {}", id);
+
+        if (!categoryRepository.existsById(id)) {
+            throw new CategoryNotFoundException(id);
+        }
+
         try {
             categoryRepository.deleteById(id);
             log.info("Category with id {} deleted", id);

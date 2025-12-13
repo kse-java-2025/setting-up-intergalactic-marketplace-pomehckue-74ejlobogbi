@@ -4,9 +4,12 @@ import com.cosmocats.marketplace.client.SupplierClient;
 import com.cosmocats.marketplace.domain.Product;
 import com.cosmocats.marketplace.dto.ProductDto;
 import com.cosmocats.marketplace.mapper.ProductMapper;
+import com.cosmocats.marketplace.repository.CategoryRepository;
 import com.cosmocats.marketplace.repository.ProductRepository;
+import com.cosmocats.marketplace.repository.entity.CategoryEntity;
 import com.cosmocats.marketplace.repository.entity.ProductEntity;
 import com.cosmocats.marketplace.service.ProductService;
+import com.cosmocats.marketplace.service.exception.CategoryNotFoundException;
 import com.cosmocats.marketplace.service.exception.PersistenceException;
 import com.cosmocats.marketplace.service.exception.ProductNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -22,6 +26,7 @@ import java.util.List;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
     private final SupplierClient supplierClient;
     private final ProductMapper productMapper;
 
@@ -54,8 +59,15 @@ public class ProductServiceImpl implements ProductService {
                     productDto.getPrice(), productDto.getName());
         }
 
+        ProductEntity entity = productMapper.toEntity(productDto);
+        entity.setProductReference(UUID.randomUUID());
+
+        CategoryEntity category = categoryRepository.findById(productDto.getCategoryId())
+                .orElseThrow(() -> new CategoryNotFoundException(productDto.getCategoryId()));
+        entity.setCategory(category);
+
         try {
-            Product product = productMapper.toDomain(productRepository.save(productMapper.toEntity(productDto)));
+            Product product = productMapper.toDomain(productRepository.save(entity));
             log.info("Product with id {} created", product.getId());
             return product;
         } catch (Exception ex) {
@@ -69,15 +81,18 @@ public class ProductServiceImpl implements ProductService {
     public Product updateProductById(Long id, ProductDto productDto) {
         log.info("Updating product with id: {}", id);
 
+        ProductEntity existingProduct = productRepository.findById(id).orElseThrow(() -> {
+            log.warn("Product with id {} not found", id);
+            return new ProductNotFoundException(id);
+        });
+
+        productMapper.updateEntityFromDto(productDto, existingProduct);
+        CategoryEntity newCategory = categoryRepository.findById(productDto.getCategoryId())
+                .orElseThrow(() -> new CategoryNotFoundException(productDto.getCategoryId()));
+        existingProduct.setCategory(newCategory);
+
         try {
-            ProductEntity existingProduct = productRepository.findById(id).orElseThrow(() -> {
-                log.warn("Product with id {} not found", id);
-                return new ProductNotFoundException(id);
-            });
-
-            productMapper.updateEntityFromDto(productDto, existingProduct);
             ProductEntity updatedProduct = productRepository.save(existingProduct);
-
             log.info("Product with id {} successfully updated", id);
             return productMapper.toDomain(updatedProduct);
         }

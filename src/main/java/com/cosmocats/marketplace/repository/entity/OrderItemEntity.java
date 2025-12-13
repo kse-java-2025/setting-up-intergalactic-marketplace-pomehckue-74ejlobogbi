@@ -1,22 +1,14 @@
 package com.cosmocats.marketplace.repository.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
 
 import static jakarta.persistence.CascadeType.PERSIST;
 
 @Entity
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"order", "product"})
 @Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
@@ -29,13 +21,13 @@ public class OrderItemEntity {
     Long id;
 
     Integer quantity;
-    Double price;
+    Double priceAtPurchase;
 
-    @ManyToOne(cascade = PERSIST)
-    @JoinColumn(name = "product", referencedColumnName = "id", nullable = false)
+    @ManyToOne(cascade = PERSIST, fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
     ProductEntity product;
 
-    @ManyToOne(cascade = PERSIST)
-    @JoinColumn(name = "order", referencedColumnName = "id", nullable = false)
+    @ManyToOne(cascade = PERSIST, fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
     OrderEntity order;
 }

@@ -12,10 +12,10 @@ public interface OrderRepository extends NaturalIdRepository<OrderEntity, String
 
     @Query("""
     SELECT o.cartId AS cartId,
-           o.totalPrice AS totalPrice,
+           o.totalAmount AS totalPrice,
            o.paymentReference AS paymentReference
     FROM OrderEntity o
-    ORDER BY o.totalPrice DESC
+    ORDER BY o.totalAmount DESC
 """)
     List<OrderOverviewProjection> getOrderSummaries();
 }
