@@ -4,12 +4,18 @@ import com.cosmocats.marketplace.client.SupplierClient;
 import com.cosmocats.marketplace.domain.Product;
 import com.cosmocats.marketplace.dto.ProductDto;
 import com.cosmocats.marketplace.mapper.ProductMapper;
+import com.cosmocats.marketplace.repository.CategoryRepository;
 import com.cosmocats.marketplace.repository.ProductRepository;
+import com.cosmocats.marketplace.repository.entity.CategoryEntity;
+import com.cosmocats.marketplace.repository.entity.ProductEntity;
 import com.cosmocats.marketplace.service.ProductService;
+import com.cosmocats.marketplace.service.exception.CategoryNotFoundException;
+import com.cosmocats.marketplace.service.exception.PersistenceException;
 import com.cosmocats.marketplace.service.exception.ProductNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,29 +26,32 @@ import java.util.UUID;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
-    private final ProductMapper productMapper;
+    private final CategoryRepository categoryRepository;
     private final SupplierClient supplierClient;
+    private final ProductMapper productMapper;
 
     @Override
-    public List<ProductDto> getAllProducts() {
+    @Transactional(readOnly = true)
+    public List<Product> getAllProducts() {
         log.info("Fetching all products from repository");
-        List<Product> products = productRepository.findAll();
-        return productMapper.toDtoList(products);
+        List<ProductEntity> products = productRepository.findAll();
+        return productMapper.toDomainList(products);
     }
 
     @Override
-    public ProductDto getProductById(UUID productId) {
-        log.info("Fetching product with id: {}", productId);
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> {
-                    log.warn("Product with id {} not found", productId);
-                    return new ProductNotFoundException(productId);
-                });
-        return productMapper.toDto(product);
+    @Transactional(readOnly = true)
+    public Product getProductById(Long productId) {
+        ProductEntity product = productRepository.findById(productId).orElseThrow(() -> {
+            log.info("Product with id {} not found", productId);
+            return new ProductNotFoundException(productId);
+        });
+
+        return productMapper.toDomain(product);
     }
 
     @Override
-    public ProductDto createProduct(ProductDto productDto) {
+    @Transactional
+    public Product createProduct(ProductDto productDto) {
         log.info("Creating new product: {}", productDto.getName());
 
         if (!supplierClient.validatePrice(productDto.getName(), productDto.getPrice())) {
@@ -50,30 +59,52 @@ public class ProductServiceImpl implements ProductService {
                     productDto.getPrice(), productDto.getName());
         }
 
-        Product product = productMapper.toEntity(productDto);
-        Product savedProduct = productRepository.save(product);
+        ProductEntity entity = productMapper.toEntity(productDto);
+        entity.setProductReference(UUID.randomUUID());
 
-        return productMapper.toDto(savedProduct);
+        CategoryEntity category = categoryRepository.findById(productDto.getCategoryId())
+                .orElseThrow(() -> new CategoryNotFoundException(productDto.getCategoryId()));
+        entity.setCategory(category);
+
+        try {
+            Product product = productMapper.toDomain(productRepository.save(entity));
+            log.info("Product with id {} created", product.getId());
+            return product;
+        } catch (Exception ex) {
+            log.error("Exception occurred while saving product");
+            throw new PersistenceException(ex);
+        }
     }
 
     @Override
-    public ProductDto updateProductById(UUID id, ProductDto productDto) {
+    @Transactional
+    public Product updateProductById(Long id, ProductDto productDto) {
         log.info("Updating product with id: {}", id);
 
-        Product existingProduct = productRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.warn("Product with id {} not found for update", id);
-                    return new ProductNotFoundException(id);
-                });
+        ProductEntity existingProduct = productRepository.findById(id).orElseThrow(() -> {
+            log.warn("Product with id {} not found", id);
+            return new ProductNotFoundException(id);
+        });
 
         productMapper.updateEntityFromDto(productDto, existingProduct);
-        Product updatedProduct = productRepository.save(existingProduct);
+        CategoryEntity newCategory = categoryRepository.findById(productDto.getCategoryId())
+                .orElseThrow(() -> new CategoryNotFoundException(productDto.getCategoryId()));
+        existingProduct.setCategory(newCategory);
 
-        return productMapper.toDto(updatedProduct);
+        try {
+            ProductEntity updatedProduct = productRepository.save(existingProduct);
+            log.info("Product with id {} successfully updated", id);
+            return productMapper.toDomain(updatedProduct);
+        }
+        catch (Exception ex) {
+            log.error("Exception occurred while updating product");
+            throw new PersistenceException(ex);
+        }
     }
 
     @Override
-    public void deleteProductById(UUID id) {
+    @Transactional
+    public void deleteProductById(Long id) {
         log.info("Deleting product with id: {}", id);
 
         if (!productRepository.existsById(id)) {
@@ -81,6 +112,12 @@ public class ProductServiceImpl implements ProductService {
             throw new ProductNotFoundException(id);
         }
 
-        productRepository.deleteById(id);
+        try {
+            productRepository.deleteById(id);
+            log.info("Product with id {} deleted", id);
+        } catch (Exception ex) {
+            log.error("Exception occurred while deleting product with id {}", id);
+            throw new PersistenceException(ex);
+        }
     }
 }

@@ -15,7 +15,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class ProductDto {
 
-    private UUID id;
+    private Long id;
 
     @NotBlank(message = "Name cannot be blank")
     @Size(max = 100, message = "Name must not exceed 100 characters")
@@ -29,9 +29,12 @@ public class ProductDto {
     @DecimalMin(value = "0.01", message = "Price must be at least 0.01")
     private Double price;
 
+    @NotNull(message = "Currency is required")
+    String currency;
+
     @NotNull(message = "Stock is required")
     @Min(value = 0, message = "Stock cannot be negative")
     private Integer stock;
 
-    private UUID categoryId;
+    private Long categoryId;
 }

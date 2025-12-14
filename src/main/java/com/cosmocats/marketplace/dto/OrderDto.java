@@ -21,7 +21,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class OrderDto {
 
-    private UUID id;
+    private Long id;
 
     @NotBlank(message = "Customer name is required")
     @Size(max = 100, message = "Customer name must not exceed 100 characters")

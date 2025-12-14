@@ -1,5 +1,6 @@
 package com.cosmocats.marketplace.web.exception;
 
+import com.cosmocats.marketplace.service.exception.PersistenceException;
 import com.cosmocats.marketplace.service.exception.ProductNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -55,22 +56,31 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(ProductNotFoundException.class)
     public ProblemDetail handleProductNotFoundException(ProductNotFoundException ex) {
-        log.info("Product Not Found exception raised: {}", ex.getMessage());
+        log.info("Product Not Found exception raised");
 
         ProblemDetail problemDetail = forStatusAndDetail(NOT_FOUND, ex.getMessage());
         problemDetail.setType(create("product-not-found"));
         problemDetail.setTitle("Product Not Found");
-        
         return problemDetail;
     }
 
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleGenericException(Exception ex) {
-        log.error("Generic exception raised", ex);
+        log.info("Generic exception raised");
 
         ProblemDetail problemDetail = forStatusAndDetail(INTERNAL_SERVER_ERROR, ex.getMessage());
         problemDetail.setType(create("internal-server-error"));
         problemDetail.setTitle("Internal Server Error");
+        return problemDetail;
+    }
+
+    @ExceptionHandler(PersistenceException.class)
+    ProblemDetail handlePersistenceException(PersistenceException ex) {
+        log.error("Persistence exception raised");
+
+        ProblemDetail problemDetail = forStatusAndDetail(INTERNAL_SERVER_ERROR, ex.getMessage());
+        problemDetail.setType(create("persistence-exception"));
+        problemDetail.setTitle("Persistence exception");
         return problemDetail;
     }
 }

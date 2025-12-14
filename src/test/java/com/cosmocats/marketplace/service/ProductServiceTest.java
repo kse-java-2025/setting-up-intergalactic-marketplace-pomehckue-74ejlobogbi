@@ -4,7 +4,10 @@ import com.cosmocats.marketplace.client.SupplierClient;
 import com.cosmocats.marketplace.domain.Product;
 import com.cosmocats.marketplace.dto.ProductDto;
 import com.cosmocats.marketplace.mapper.ProductMapper;
+import com.cosmocats.marketplace.repository.CategoryRepository;
 import com.cosmocats.marketplace.repository.ProductRepository;
+import com.cosmocats.marketplace.repository.entity.CategoryEntity;
+import com.cosmocats.marketplace.repository.entity.ProductEntity;
 import com.cosmocats.marketplace.service.exception.ProductNotFoundException;
 import com.cosmocats.marketplace.service.impl.ProductServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,7 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
+import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -29,6 +32,9 @@ class ProductServiceTest {
     private ProductRepository productRepository;
 
     @Mock
+    private CategoryRepository categoryRepository;
+
+    @Mock
     private ProductMapper productMapper;
 
     @Mock
@@ -39,17 +45,27 @@ class ProductServiceTest {
 
     private Product product;
     private ProductDto productDto;
-    private UUID productId;
+    private ProductEntity productEntity;
+    private CategoryEntity categoryEntity;
+    private Long productId;
+    private Long categoryId;
 
     @BeforeEach
     void setUp() {
-        productId = UUID.randomUUID();
+        productId = new Random().nextLong();
+        categoryId = new Random().nextLong();
+
+        categoryEntity = CategoryEntity.builder()
+                .id(categoryId)
+                .name("Cosmic Toys")
+                .build();
 
         product = Product.builder()
                 .id(productId)
                 .name("Cosmic Milk")
                 .description("Fresh from Milky Way")
                 .price(10.0)
+                .currency("USD")
                 .stock(50)
                 .build();
 
@@ -58,16 +74,28 @@ class ProductServiceTest {
                 .name("Cosmic Milk")
                 .description("Fresh from Milky Way")
                 .price(10.0)
+                .currency("USD")
                 .stock(50)
+                .categoryId(categoryId)
+                .build();
+
+        productEntity = ProductEntity.builder()
+                .id(productId)
+                .name("Cosmic Milk")
+                .description("Fresh from Milky Way")
+                .price(10.0)
+                .currency("USD")
+                .stock(50)
+                .category(categoryEntity)
                 .build();
     }
 
     @Test
     void getAllProducts_shouldReturnList() {
-        when(productRepository.findAll()).thenReturn(List.of(product));
-        when(productMapper.toDtoList(any())).thenReturn(List.of(productDto));
+        when(productRepository.findAll()).thenReturn(List.of(productEntity));
+        when(productMapper.toDomainList(any())).thenReturn(List.of(product));
 
-        List<ProductDto> result = productService.getAllProducts();
+        List<Product> result = productService.getAllProducts();
 
         assertEquals(1, result.size());
         verify(productRepository).findAll();
@@ -75,10 +103,10 @@ class ProductServiceTest {
 
     @Test
     void getProductById_found_shouldReturnProduct() {
-        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
-        when(productMapper.toDto(product)).thenReturn(productDto);
+        when(productRepository.findById(productId)).thenReturn(Optional.of(productEntity));
+        when(productMapper.toDomain(productEntity)).thenReturn(product);
 
-        ProductDto result = productService.getProductById(productId);
+        Product result = productService.getProductById(productId);
 
         assertEquals(productId, result.getId());
         verify(productRepository).findById(productId);
@@ -94,12 +122,13 @@ class ProductServiceTest {
 
     @Test
     void createProduct_shouldSave() {
-        when(productMapper.toEntity(productDto)).thenReturn(product);
-        when(productRepository.save(any())).thenReturn(product);
-        when(productMapper.toDto(product)).thenReturn(productDto);
+        when(productMapper.toEntity(productDto)).thenReturn(productEntity);
+        when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(categoryEntity));
+        when(productRepository.save(any())).thenReturn(productEntity);
+        when(productMapper.toDomain(productEntity)).thenReturn(product);
         when(supplierClient.validatePrice(anyString(), anyDouble())).thenReturn(true);
 
-        ProductDto result = productService.createProduct(productDto);
+        Product result = productService.createProduct(productDto);
 
         assertNotNull(result);
         verify(productRepository).save(any());
@@ -107,14 +136,15 @@ class ProductServiceTest {
 
     @Test
     void updateProductById_found_shouldUpdate() {
-        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
-        when(productRepository.save(any())).thenReturn(product);
-        when(productMapper.toDto(product)).thenReturn(productDto);
+        when(productRepository.findById(productId)).thenReturn(Optional.of(productEntity));
+        when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(categoryEntity));
+        when(productRepository.save(any())).thenReturn(productEntity);
+        when(productMapper.toDomain(productEntity)).thenReturn(product);
 
-        ProductDto result = productService.updateProductById(productId, productDto);
+        Product result = productService.updateProductById(productId, productDto);
 
         assertNotNull(result);
-        verify(productMapper).updateEntityFromDto(productDto, product);
+        verify(productMapper).updateEntityFromDto(productDto, productEntity);
     }
 
     @Test

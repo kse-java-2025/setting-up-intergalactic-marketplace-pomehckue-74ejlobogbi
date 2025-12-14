@@ -15,7 +15,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class CategoryDto {
 
-    private UUID id;
+    private Long id;
 
     @NotBlank(message = "Category name cannot be blank")
     @Size(max = 100, message = "Category name must not exceed 100 characters")

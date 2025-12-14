@@ -15,10 +15,10 @@ import java.util.UUID;
 @AllArgsConstructor
 public class OrderItemDto {
 
-    private UUID id;
+    private Long id;
 
     @NotNull(message = "Product ID is required")
-    private UUID productId;
+    private Long productId;
 
     @NotNull(message = "Quantity is required")
     @Min(value = 1, message = "Quantity must be at least 1")

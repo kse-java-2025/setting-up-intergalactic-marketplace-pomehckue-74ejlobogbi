@@ -1,19 +1,19 @@
 package com.cosmocats.marketplace.service;
 
+import com.cosmocats.marketplace.domain.Product;
 import com.cosmocats.marketplace.dto.ProductDto;
 
 import java.util.List;
-import java.util.UUID;
 
 public interface ProductService {
-    
-    List<ProductDto> getAllProducts();
 
-    ProductDto getProductById(UUID id);
+    List<Product> getAllProducts();
 
-    ProductDto createProduct(ProductDto productDto);
+    Product getProductById(Long id);
 
-    ProductDto updateProductById(UUID id, ProductDto productDto);
+    Product createProduct(ProductDto productDto);
 
-    void deleteProductById(UUID id);
+    Product updateProductById(Long id, ProductDto productDto);
+
+    void deleteProductById(Long id);
 }
