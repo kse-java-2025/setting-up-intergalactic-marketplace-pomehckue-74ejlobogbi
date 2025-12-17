@@ -10,3 +10,20 @@ services:
       - ./wiremock/mappings:/home/wiremock/mappings
     command:
       - --verbose
+
+  cosmic-jwt-issuer-mock:
+    container_name: cosmic-jwt-issuer-mock
+    build:
+      context: ./jwt-issuer-mock
+    networks:
+      - services
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/__admin/requests || exit 1" ]
+      start_period: 10s
+      interval: 5s
+      timeout: 2s
+      retries: 3
+    volumes:
+      - ./jwt-issuer-mock/jwks.json:/var/wiremock/__files/jwks.json
+    ports:
+      - "8083:8080"
