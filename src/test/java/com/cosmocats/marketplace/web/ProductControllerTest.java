@@ -2,7 +2,7 @@ package com.cosmocats.marketplace.web;
 
 import com.cosmocats.marketplace.domain.Product;
 import com.cosmocats.marketplace.dto.ProductDto;
-import com.cosmocats.marketplace.mapper.ProductMapper; // Import Mapper
+import com.cosmocats.marketplace.mapper.ProductMapper;
 import com.cosmocats.marketplace.repository.entity.ProductEntity;
 import com.cosmocats.marketplace.service.ProductService;
 import com.cosmocats.marketplace.service.exception.ProductNotFoundException;
@@ -18,7 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.Random;
 
-import static org.mockito.ArgumentMatchers.*; // Import anyList
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
