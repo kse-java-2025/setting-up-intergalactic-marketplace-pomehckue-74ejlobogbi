@@ -22,7 +22,9 @@ ext {
             "**/config/DataInitializer.*",
             "**/domain/**",
             "**/dto/**",
-            "**/mapper/**"
+            "**/mapper/**",
+            "**/persistence/entity/**",
+            "**/persistence/mapper/**"
     ]
 }
 

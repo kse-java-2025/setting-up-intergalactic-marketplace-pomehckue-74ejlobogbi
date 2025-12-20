@@ -1,7 +1,7 @@
 package com.cosmocats.marketplace.config;
 
-import com.cosmocats.marketplace.domain.Product;
-import com.cosmocats.marketplace.repository.ProductRepository;
+import com.cosmocats.marketplace.persistence.entity.ProductEntity;
+import com.cosmocats.marketplace.persistence.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -18,21 +18,21 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         log.info("Initializing test data...");
 
-        Product product1 = Product.builder()
+        ProductEntity product1 = ProductEntity.builder()
                 .name("Anti-Gravity Yarn Ball")
                 .description("Perfect for cosmic cats! Floats in zero gravity")
                 .price(299.99)
                 .stock(15)
                 .build();
 
-        Product product2 = Product.builder()
+        ProductEntity product2 = ProductEntity.builder()
                 .name("Cosmic Milk")
                 .description("Freshly collected from the Milky Way galaxy")
                 .price(49.99)
                 .stock(50)
                 .build();
 
-        Product product3 = Product.builder()
+        ProductEntity product3 = ProductEntity.builder()
                 .name("Laser Pointer 9000")
                 .description("Entertains cats across multiple dimensions")
                 .price(149.50)

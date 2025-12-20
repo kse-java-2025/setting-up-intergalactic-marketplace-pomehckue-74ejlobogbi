@@ -16,19 +16,17 @@ import java.util.UUID;
 public interface ProductMapper {
 
     @Mapping(source = "category.id", target = "categoryId")
-    ProductDto toDto(Product entity);
+    ProductDto toDto(Product domain);
 
     @Mapping(target = "category", ignore = true)
-    @Mapping(target = "id", ignore = true)
-    Product toEntity(ProductDto dto);
+    Product toDomain(ProductDto dto);
 
-    List<ProductDto> toDtoList(List<Product> entities);
+    List<ProductDto> toDtoList(List<Product> domains);
 
     @Mapping(target = "category", ignore = true)
-    @Mapping(target = "id", ignore = true)
-    void updateEntityFromDto(ProductDto dto, @MappingTarget Product entity);
+    void updateDomainFromDto(ProductDto dto, @MappingTarget Product domain);
 
-    default Category mapCategoryId(UUID categoryId) {
+    default Category mapCategoryIdToCategory(UUID categoryId) {
         if (categoryId == null) {
             return null;
         }

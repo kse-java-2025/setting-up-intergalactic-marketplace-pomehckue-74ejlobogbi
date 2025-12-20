@@ -17,17 +17,17 @@ public interface OrderItemMapper {
 
     @Mapping(source = "product.id", target = "productId")
     @Mapping(source = "product.name", target = "productName")
-    @Mapping(expression = "java(entity.getSubtotal())", target = "subtotal")
-    OrderItemDto toDto(OrderItem entity);
+    @Mapping(expression = "java(domain.getSubtotal())", target = "subtotal")
+    OrderItemDto toDto(OrderItem domain);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "order", ignore = true)
     @Mapping(target = "product", ignore = true)
-    OrderItem toEntity(OrderItemDto dto);
+    OrderItem toDomainWithoutIdOrderAndProduct(OrderItemDto dto);
 
-    List<OrderItemDto> toDtoList(List<OrderItem> entities);
+    List<OrderItemDto> toDtoList(List<OrderItem> domains);
 
-    default Product mapProductId(UUID productId) {
+    default Product mapProductIdToProduct(UUID productId) {
         if (productId == null) {
             return null;
         }

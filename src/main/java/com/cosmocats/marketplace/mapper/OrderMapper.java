@@ -15,27 +15,27 @@ import java.util.List;
 public interface OrderMapper {
 
     @Mapping(source = "status", target = "status")
-    OrderDto toDto(Order entity);
+    OrderDto toDto(Order domain);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "orderItems", ignore = true)
-    Order toEntity(OrderDto dto);
+    Order toDomainWithoutIdTimestampsAndItems(OrderDto dto);
 
-    List<OrderDto> toDtoList(List<Order> entities);
+    List<OrderDto> toDtoList(List<Order> domains);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "orderItems", ignore = true)
-    void updateEntityFromDto(OrderDto dto, @MappingTarget Order entity);
+    void updateDomainFromDtoWithoutIdTimestampsAndItems(OrderDto dto, @MappingTarget Order domain);
 
-    default String mapOrderStatus(Order.OrderStatus status) {
+    default String mapOrderStatusToString(Order.OrderStatus status) {
         return status != null ? status.name() : null;
     }
 
-    default Order.OrderStatus mapOrderStatus(String status) {
+    default Order.OrderStatus mapStringToOrderStatus(String status) {
         return status != null ? Order.OrderStatus.valueOf(status) : null;
     }
 }

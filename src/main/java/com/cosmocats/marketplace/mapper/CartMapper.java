@@ -14,21 +14,21 @@ import java.util.List;
 )
 public interface CartMapper {
 
-    @Mapping(expression = "java(entity.getTotalAmount())", target = "totalAmount")
-    @Mapping(expression = "java(entity.getTotalItems())", target = "totalItems")
-    CartDto toDto(Cart entity);
+    @Mapping(expression = "java(domain.getTotalAmount())", target = "totalAmount")
+    @Mapping(expression = "java(domain.getTotalItems())", target = "totalItems")
+    CartDto toDto(Cart domain);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "cartItems", ignore = true)
-    Cart toEntity(CartDto dto);
+    Cart toDomainWithoutIdTimestampsAndItems(CartDto dto);
 
-    List<CartDto> toDtoList(List<Cart> entities);
+    List<CartDto> toDtoList(List<Cart> domains);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "cartItems", ignore = true)
-    void updateEntityFromDto(CartDto dto, @MappingTarget Cart entity);
+    void updateDomainFromDtoWithoutIdTimestampsAndItems(CartDto dto, @MappingTarget Cart domain);
 }

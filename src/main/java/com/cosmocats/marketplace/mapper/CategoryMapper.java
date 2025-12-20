@@ -13,14 +13,14 @@ import java.util.List;
 )
 public interface CategoryMapper {
 
-    CategoryDto toDto(Category entity);
+    CategoryDto toDto(Category domain);
 
     @Mapping(target = "products", ignore = true)
-    Category toEntity(CategoryDto dto);
+    Category toDomainWithoutProducts(CategoryDto dto);
 
-    List<CategoryDto> toDtoList(List<Category> entities);
+    List<CategoryDto> toDtoList(List<Category> domains);
 
     @Mapping(target = "products", ignore = true)
     @Mapping(target = "id", ignore = true)
-    void updateEntityFromDto(CategoryDto dto, @MappingTarget Category entity);
+    void updateDomainFromDtoWithoutIdAndProducts(CategoryDto dto, @MappingTarget Category domain);
 }

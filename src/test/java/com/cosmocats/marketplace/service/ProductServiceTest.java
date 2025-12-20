@@ -4,7 +4,9 @@ import com.cosmocats.marketplace.client.SupplierClient;
 import com.cosmocats.marketplace.domain.Product;
 import com.cosmocats.marketplace.dto.ProductDto;
 import com.cosmocats.marketplace.mapper.ProductMapper;
-import com.cosmocats.marketplace.repository.ProductRepository;
+import com.cosmocats.marketplace.persistence.entity.ProductEntity;
+import com.cosmocats.marketplace.persistence.mapper.ProductPersistenceMapper;
+import com.cosmocats.marketplace.persistence.repository.ProductRepository;
 import com.cosmocats.marketplace.service.exception.ProductNotFoundException;
 import com.cosmocats.marketplace.service.impl.ProductServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,11 +34,15 @@ class ProductServiceTest {
     private ProductMapper productMapper;
 
     @Mock
+    private ProductPersistenceMapper persistenceMapper;
+
+    @Mock
     private SupplierClient supplierClient;
 
     @InjectMocks
     private ProductServiceImpl productService;
 
+    private ProductEntity productEntity;
     private Product product;
     private ProductDto productDto;
     private UUID productId;
@@ -44,6 +50,14 @@ class ProductServiceTest {
     @BeforeEach
     void setUp() {
         productId = UUID.randomUUID();
+
+        productEntity = ProductEntity.builder()
+                .id(productId)
+                .name("Cosmic Milk")
+                .description("Fresh from Milky Way")
+                .price(10.0)
+                .stock(50)
+                .build();
 
         product = Product.builder()
                 .id(productId)
@@ -64,24 +78,34 @@ class ProductServiceTest {
 
     @Test
     void getAllProducts_shouldReturnList() {
-        when(productRepository.findAll()).thenReturn(List.of(product));
+        when(productRepository.findAll()).thenReturn(List.of(productEntity));
+        when(persistenceMapper.toDomainList(any())).thenReturn(List.of(product));
         when(productMapper.toDtoList(any())).thenReturn(List.of(productDto));
 
         List<ProductDto> result = productService.getAllProducts();
 
         assertEquals(1, result.size());
+        assertEquals(productId, result.getFirst().id());
+        assertEquals("Cosmic Milk", result.getFirst().name());
         verify(productRepository).findAll();
+        verify(persistenceMapper).toDomainList(any());
+        verify(productMapper).toDtoList(any());
     }
 
     @Test
     void getProductById_found_shouldReturnProduct() {
-        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        when(productRepository.findById(productId)).thenReturn(Optional.of(productEntity));
+        when(persistenceMapper.toDomain(productEntity)).thenReturn(product);
         when(productMapper.toDto(product)).thenReturn(productDto);
 
         ProductDto result = productService.getProductById(productId);
 
-        assertEquals(productId, result.getId());
+        assertEquals(productId, result.id());
+        assertEquals("Cosmic Milk", result.name());
+        assertEquals(10.0, result.price());
         verify(productRepository).findById(productId);
+        verify(persistenceMapper).toDomain(productEntity);
+        verify(productMapper).toDto(product);
     }
 
     @Test
@@ -90,31 +114,45 @@ class ProductServiceTest {
 
         assertThrows(ProductNotFoundException.class,
                 () -> productService.getProductById(productId));
+
+        verify(productRepository).findById(productId);
+        verifyNoInteractions(persistenceMapper);
+        verifyNoInteractions(productMapper);
     }
 
     @Test
     void createProduct_shouldSave() {
-        when(productMapper.toEntity(productDto)).thenReturn(product);
-        when(productRepository.save(any())).thenReturn(product);
+        when(productMapper.toDomain(productDto)).thenReturn(product);
+        when(persistenceMapper.toEntity(product)).thenReturn(productEntity);
+        when(productRepository.save(any())).thenReturn(productEntity);
+        when(persistenceMapper.toDomain(productEntity)).thenReturn(product);
         when(productMapper.toDto(product)).thenReturn(productDto);
         when(supplierClient.validatePrice(anyString(), anyDouble())).thenReturn(true);
 
         ProductDto result = productService.createProduct(productDto);
 
         assertNotNull(result);
+        assertEquals(productId, result.id());
+        assertEquals("Cosmic Milk", result.name());
         verify(productRepository).save(any());
+        verify(supplierClient).validatePrice("Cosmic Milk", 10.0);
     }
 
     @Test
     void updateProductById_found_shouldUpdate() {
-        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
-        when(productRepository.save(any())).thenReturn(product);
+        when(productRepository.findById(productId)).thenReturn(Optional.of(productEntity));
+        when(persistenceMapper.toDomain(productEntity)).thenReturn(product);
+        when(persistenceMapper.toEntity(product)).thenReturn(productEntity);
+        when(productRepository.save(any())).thenReturn(productEntity);
+        when(persistenceMapper.toDomain(productEntity)).thenReturn(product);
         when(productMapper.toDto(product)).thenReturn(productDto);
 
         ProductDto result = productService.updateProductById(productId, productDto);
 
         assertNotNull(result);
-        verify(productMapper).updateEntityFromDto(productDto, product);
+        assertEquals(productId, result.id());
+        verify(productMapper).updateDomainFromDto(productDto, product);
+        verify(productRepository).save(any());
     }
 
     @Test
@@ -123,6 +161,10 @@ class ProductServiceTest {
 
         assertThrows(ProductNotFoundException.class,
                 () -> productService.updateProductById(productId, productDto));
+
+        verify(productRepository).findById(productId);
+        verifyNoInteractions(persistenceMapper);
+        verify(productMapper, never()).updateDomainFromDto(any(), any());
     }
 
     @Test
@@ -131,6 +173,7 @@ class ProductServiceTest {
 
         productService.deleteProductById(productId);
 
+        verify(productRepository).existsById(productId);
         verify(productRepository).deleteById(productId);
     }
 
@@ -140,5 +183,8 @@ class ProductServiceTest {
 
         assertThrows(ProductNotFoundException.class,
                 () -> productService.deleteProductById(productId));
+
+        verify(productRepository).existsById(productId);
+        verify(productRepository, never()).deleteById(any());
     }
 }

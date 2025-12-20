@@ -18,17 +18,17 @@ public interface CartItemMapper {
     @Mapping(source = "product.id", target = "productId")
     @Mapping(source = "product.name", target = "productName")
     @Mapping(source = "product.price", target = "productPrice")
-    @Mapping(expression = "java(entity.getSubtotal())", target = "subtotal")
-    CartItemDto toDto(CartItem entity);
+    @Mapping(expression = "java(domain.getSubtotal())", target = "subtotal")
+    CartItemDto toDto(CartItem domain);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "cart", ignore = true)
     @Mapping(target = "product", ignore = true)
-    CartItem toEntity(CartItemDto dto);
+    CartItem toDomainWithoutIdCartAndProduct(CartItemDto dto);
 
-    List<CartItemDto> toDtoList(List<CartItem> entities);
+    List<CartItemDto> toDtoList(List<CartItem> domains);
 
-    default Product mapProductId(UUID productId) {
+    default Product mapProductIdToProduct(UUID productId) {
         if (productId == null) {
             return null;
         }
